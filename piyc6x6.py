@@ -2,30 +2,15 @@ import streamlit as st
 import numpy as np
 
 # Sayfa Ayarları
-st.set_page_config(page_title="PIYC 6x6", layout="centered")
+st.set_page_config(page_title="PIYC Elite 6x6", layout="centered")
 
-# --- GELİŞMİŞ MOBİL OYUN CSS ---
+# --- YÜKSEK KONTRAST VE GÖRÜNÜRLÜK CSS ---
 st.markdown("""
 <style>
-    /* Ekranın sağa sola kaymasını engelle */
-    .main .block-container {
-        padding: 10px !important;
-        max-width: 100% !important;
-    }
+    /* Ana Arka Plan */
+    .stApp { background-color: #0e1117; }
 
-    /* SAYI SEÇİM PANELİNİ ÜSTE SABİTLE (Sticky) */
-    div[data-testid="stWidgetLabel"] { display: none; } /* Etiketi gizle yer kazandır */
-    
-    div[data-row-widget="true"] {
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        background-color: #0e1117;
-        padding: 10px 0;
-        border-bottom: 1px solid #333;
-    }
-
-    /* 6x6 IZGARA ZORLAMASI */
+    /* IZGARA ZORLAMASI (Dikeyde yan yana tutar) */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -39,21 +24,37 @@ st.markdown("""
         min-width: 0 !important;
     }
 
-    /* BUTONLAR (Kare Formu) */
+    /* TAHTA BUTONLARI (Okunabilir Rakamlar) */
     .stButton > button {
         width: 100% !important;
-        aspect-ratio: 1 / 1 !important; /* Kare yap */
+        aspect-ratio: 1 / 1 !important;
         height: auto !important;
         padding: 0 !important;
-        font-size: clamp(12px, 4vw, 20px) !important; /* Ekran boyutuna göre yazı tipi */
-        line-height: 1 !important;
+        font-size: 22px !important; /* Rakamları büyüttük */
+        font-weight: 800 !important; /* Kalınlaştırdık */
         border-radius: 4px !important;
-        background-color: #262730 !important;
+        background-color: #262730 !important; /* Koyu gri arka plan */
+        color: #ffffff !important; /* PARLAK BEYAZ RAKAMLAR */
+        border: 1px solid #444 !important;
+    }
+    
+    /* Üzerine gelince veya basınca renk değişimi */
+    .stButton > button:active, .stButton > button:focus {
+        color: #FF4B4B !important;
+        border-color: #FF4B4B !important;
     }
 
-    /* Mobilde alt boşlukları temizle */
-    footer {display: none !important;}
-    #MainMenu {display: none !important;}
+    /* SAYI SEÇİM PANELİ (Pills) Görünümü */
+    div[data-testid="stWidgetLabel"] p {
+        color: #ffffff !important;
+        font-size: 18px !important;
+        font-weight: bold !important;
+    }
+    
+    /* Seçili olan sayının belirgin olması için */
+    button[data-testid="stBaseButton-secondary"] {
+        border-radius: 8px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -78,12 +79,14 @@ def can_move_anywhere(board):
                         return True
     return False
 
-# 2. Üst Panel (Sabitlenmiş Sayı Seçimi)
-st.write("### PIYC 6x6")
-selected_num = st.select_slider("Rakam Seç:", options=[1, 2, 3, 4, 5, 6], value=1)
+# 2. Üst Panel (Görünür Sayı Seçimi)
+st.title("🔢 PIYC: 6x6 Elite")
+
+# Sürgü yerine yan yana duran büyük butonlar (Pills)
+selected_num = st.pills("Koymak istediğin rakamı seç:", [1, 2, 3, 4, 5, 6], selection_mode="single", default=1)
 
 if not st.session_state.game_over:
-    st.caption(f"Sıra: Oyuncu {st.session_state.turn}")
+    st.markdown(f"**Sıra:** Oyuncu {st.session_state.turn}")
 else:
     st.success(f"🏆 Kazanan: Oyuncu {st.session_state.winner}")
 
@@ -107,10 +110,11 @@ for r in range(6):
                             st.session_state.turn = next_player
                         st.rerun()
                     else:
-                        st.toast(f"Hata: {selected_num}", icon="❌")
+                        st.toast(f"Hata: {selected_num} çakışıyor!", icon="❌")
 
 # 4. Alt Kontroller
-if st.button("🔄 Yeni Oyun"):
+st.divider()
+if st.button("🔄 Yeni Oyun Başlat"):
     st.session_state.board = np.zeros((6, 6), dtype=int)
     st.session_state.turn = 1
     st.session_state.game_over = False
