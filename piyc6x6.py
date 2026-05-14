@@ -1,43 +1,60 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu May 14 09:46:24 2026
-
-@author: User
-"""
-
 import streamlit as st
 import numpy as np
 
-# Sayfa Yapılandırması
-st.set_page_config(page_title="PIYC Elite 6x6", layout="centered")
+# Sayfa Ayarları
+st.set_page_config(page_title="PIYC 6x6", layout="centered")
 
-# --- MOBİL UYUMLU CSS (IZGARA ZORLAMASI) ---
+# --- GELİŞMİŞ MOBİL OYUN CSS ---
 st.markdown("""
-    <style>
-    /* Sütunların mobilde alt alta gelmesini engelle, yan yana tut */
+<style>
+    /* Ekranın sağa sola kaymasını engelle */
+    .main .block-container {
+        padding: 10px !important;
+        max-width: 100% !important;
+    }
+
+    /* SAYI SEÇİM PANELİNİ ÜSTE SABİTLE (Sticky) */
+    div[data-testid="stWidgetLabel"] { display: none; } /* Etiketi gizle yer kazandır */
+    
+    div[data-row-widget="true"] {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background-color: #0e1117;
+        padding: 10px 0;
+        border-bottom: 1px solid #333;
+    }
+
+    /* 6x6 IZGARA ZORLAMASI */
+    [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 2px !important;
+        justify-content: center !important;
+    }
+
     [data-testid="column"] {
-        width: calc(16.6% - 5px) !important;
-        flex: 1 1 calc(16.6% - 5px) !important;
-        min-width: calc(16.6% - 5px) !important;
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
     }
-    
-    /* Buton boyutlarını telefon ekranı için optimize et */
-    .stButton>button {
-        height: 55px !important; 
-        width: 100% !important; 
-        font-size: 18px !important; 
-        font-weight: bold !important;
-        padding: 0px !important;
-        margin: 2px 0px !important;
+
+    /* BUTONLAR (Kare Formu) */
+    .stButton > button {
+        width: 100% !important;
+        aspect-ratio: 1 / 1 !important; /* Kare yap */
+        height: auto !important;
+        padding: 0 !important;
+        font-size: clamp(12px, 4vw, 20px) !important; /* Ekran boyutuna göre yazı tipi */
+        line-height: 1 !important;
+        border-radius: 4px !important;
+        background-color: #262730 !important;
     }
-    
-    /* Konteynır boşluklarını daralt */
-    .block-container {
-        padding-top: 1rem !important;
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
-    }
-    </style>
+
+    /* Mobilde alt boşlukları temizle */
+    footer {display: none !important;}
+    #MainMenu {display: none !important;}
+</style>
 """, unsafe_allow_html=True)
 
 # 1. Oyun Hafızası
@@ -61,18 +78,16 @@ def can_move_anywhere(board):
                         return True
     return False
 
-# 3. Başlık ve Durum
-st.title("🔢 PIYC: 6x6 Elite")
+# 2. Üst Panel (Sabitlenmiş Sayı Seçimi)
+st.write("### PIYC 6x6")
+selected_num = st.select_slider("Rakam Seç:", options=[1, 2, 3, 4, 5, 6], value=1)
 
 if not st.session_state.game_over:
-    st.write(f"Sıradaki: **Oyuncu {st.session_state.turn}**")
+    st.caption(f"Sıra: Oyuncu {st.session_state.turn}")
 else:
-    st.success(f"🏆 Kazanan: **Oyuncu {st.session_state.winner}**")
+    st.success(f"🏆 Kazanan: Oyuncu {st.session_state.winner}")
 
-# 4. Rakam Seçimi
-selected_num = st.pills("Seç:", [1, 2, 3, 4, 5, 6], selection_mode="single", default=1)
-
-# 5. 6x6 Izgara (Mobil Uyumlu)
+# 3. Oyun Tahtası
 for r in range(6):
     cols = st.columns(6)
     for c in range(6):
@@ -92,9 +107,11 @@ for r in range(6):
                             st.session_state.turn = next_player
                         st.rerun()
                     else:
-                        st.toast(f"Hata: {selected_num} çakışıyor!", icon="❌")
+                        st.toast(f"Hata: {selected_num}", icon="❌")
 
-# Reset
+# 4. Alt Kontroller
 if st.button("🔄 Yeni Oyun"):
-    del st.session_state.board
+    st.session_state.board = np.zeros((6, 6), dtype=int)
+    st.session_state.turn = 1
+    st.session_state.game_over = False
     st.rerun()
