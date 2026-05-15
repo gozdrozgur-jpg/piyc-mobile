@@ -1,16 +1,13 @@
 import streamlit as st
 import numpy as np
 
-# Sayfa Ayarları
+# 1. Sayfa Ayarları
 st.set_page_config(page_title="PIYC Elite 6x6", layout="centered")
 
-# --- YÜKSEK KONTRAST VE GÖRÜNÜRLÜK CSS ---
+# --- CSS: MOBİL UYUMLU GÖRÜNÜM VE KONTRAST ---
 st.markdown("""
 <style>
-    /* Ana Arka Plan */
     .stApp { background-color: #0e1117; }
-
-    /* IZGARA ZORLAMASI (Dikeyde yan yana tutar) */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -18,47 +15,24 @@ st.markdown("""
         gap: 2px !important;
         justify-content: center !important;
     }
-
     [data-testid="column"] {
         flex: 1 1 0 !important;
         min-width: 0 !important;
     }
-
-    /* TAHTA BUTONLARI (Okunabilir Rakamlar) */
     .stButton > button {
         width: 100% !important;
         aspect-ratio: 1 / 1 !important;
         height: auto !important;
-        padding: 0 !important;
-        font-size: 22px !important; /* Rakamları büyüttük */
-        font-weight: 800 !important; /* Kalınlaştırdık */
-        border-radius: 4px !important;
-        background-color: #262730 !important; /* Koyu gri arka plan */
-        color: #ffffff !important; /* PARLAK BEYAZ RAKAMLAR */
-        border: 1px solid #444 !important;
-    }
-    
-    /* Üzerine gelince veya basınca renk değişimi */
-    .stButton > button:active, .stButton > button:focus {
-        color: #FF4B4B !important;
-        border-color: #FF4B4B !important;
-    }
-
-    /* SAYI SEÇİM PANELİ (Pills) Görünümü */
-    div[data-testid="stWidgetLabel"] p {
+        font-size: 22px !important;
+        font-weight: 800 !important;
         color: #ffffff !important;
-        font-size: 18px !important;
-        font-weight: bold !important;
-    }
-    
-    /* Seçili olan sayının belirgin olması için */
-    button[data-testid="stBaseButton-secondary"] {
-        border-radius: 8px !important;
+        background-color: #262730 !important;
+        border: 1px solid #444 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 1. Oyun Hafızası
+# 2. Oyun Hafızası
 if 'board' not in st.session_state:
     st.session_state.board = np.zeros((6, 6), dtype=int)
     st.session_state.turn = 1
@@ -79,39 +53,48 @@ def can_move_anywhere(board):
                         return True
     return False
 
-# 2. Üst Panel (Görünür Sayı Seçimi)
+# 3. Başlık ve Sayı Seçimi
 st.title("🔢 PIYC: 6x6 Elite")
 
-# Sürgü yerine yan yana duran büyük butonlar (Pills)
-selected_num = st.pills("Koymak istediğin rakamı seç:", [1, 2, 3, 4, 5, 6], selection_mode="single", default=1)
+# Rakam seçimi (Varsayılan olarak 1 seçili gelir)
+selected_num = st.pills("Rakam Seç:", [1, 2, 3, 4, 5, 6], selection_mode="single", default=1)
 
 if not st.session_state.game_over:
-    st.markdown(f"**Sıra:** Oyuncu {st.session_state.turn}")
+    st.write(f"Sıra: **Oyuncu {st.session_state.turn}**")
 else:
     st.success(f"🏆 Kazanan: Oyuncu {st.session_state.winner}")
 
-# 3. Oyun Tahtası
-if st.button(label, key=f"b_{r}_{c}", disabled=st.session_state.game_over):
-                # GÜVENLİK KONTROLÜ: selected_num None ise işlemi yapma
-                if selected_num is None:
-                    st.warning("Lütfen önce bir rakam seçin!")
-                elif val == 0:
-                    if check_move(st.session_state.board, r, c, selected_num):
-                        st.session_state.board[r, c] = selected_num
-                        next_player = 2 if st.session_state.turn == 1 else 1
-                        
-                        if not can_move_anywhere(st.session_state.board):
-                            st.session_state.game_over = True
-                            st.session_state.winner = st.session_state.turn
+# 4. Oyun Tahtası (Buradaki döngü yapısı label hatasını çözer)
+for r in range(6):
+    cols = st.columns(6)
+    for c in range(6):
+        with cols[c]:
+            # Değişkenleri burada net bir şekilde tanımlıyoruz
+            current_val = st.session_state.board[r, c]
+            button_label = str(int(current_val)) if current_val != 0 else " "
+            
+            if st.button(button_label, key=f"b_{r}_{c}", disabled=st.session_state.game_over):
+                # Hata engelleyici kontrol
+                if selected_num is not None:
+                    if current_val == 0:
+                        if check_move(st.session_state.board, r, c, selected_num):
+                            st.session_state.board[r, c] = selected_num
+                            next_player = 2 if st.session_state.turn == 1 else 1
+                            
+                            if not can_move_anywhere(st.session_state.board):
+                                st.session_state.game_over = True
+                                st.session_state.winner = st.session_state.turn
+                            else:
+                                st.session_state.turn = next_player
+                            st.rerun()
                         else:
-                            st.session_state.turn = next_player
-                        st.rerun()
-                    else:
-                        st.toast(f"Hata: {selected_num} çakışıyor!", icon="❌")
+                            st.toast(f"Çakışma: {selected_num}", icon="❌")
+                else:
+                    st.warning("Lütfen bir sayı seçin!")
 
-# 4. Alt Kontroller
+# 5. Alt Bölüm
 st.divider()
-if st.button("🔄 Yeni Oyun Başlat"):
+if st.button("🔄 Yeni Oyun"):
     st.session_state.board = np.zeros((6, 6), dtype=int)
     st.session_state.turn = 1
     st.session_state.game_over = False
