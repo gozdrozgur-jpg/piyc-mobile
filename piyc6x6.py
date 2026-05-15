@@ -91,18 +91,15 @@ else:
     st.success(f"🏆 Kazanan: Oyuncu {st.session_state.winner}")
 
 # 3. Oyun Tahtası
-for r in range(6):
-    cols = st.columns(6)
-    for c in range(6):
-        with cols[c]:
-            val = st.session_state.board[r, c]
-            label = str(int(val)) if val != 0 else " "
-            
-            if st.button(label, key=f"b_{r}_{c}", disabled=st.session_state.game_over):
-                if val == 0:
+if st.button(label, key=f"b_{r}_{c}", disabled=st.session_state.game_over):
+                # GÜVENLİK KONTROLÜ: selected_num None ise işlemi yapma
+                if selected_num is None:
+                    st.warning("Lütfen önce bir rakam seçin!")
+                elif val == 0:
                     if check_move(st.session_state.board, r, c, selected_num):
                         st.session_state.board[r, c] = selected_num
                         next_player = 2 if st.session_state.turn == 1 else 1
+                        
                         if not can_move_anywhere(st.session_state.board):
                             st.session_state.game_over = True
                             st.session_state.winner = st.session_state.turn
